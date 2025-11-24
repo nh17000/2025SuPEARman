@@ -36,6 +36,10 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOReal;
+import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.spindexer.Spindexer;
 import frc.robot.subsystems.spindexer.SpindexerIO;
 import frc.robot.subsystems.spindexer.SpindexerIOReal;
@@ -67,6 +71,7 @@ public class RobotContainer {
     private final Intake intake;
     private final Spindexer spindexer;
     private final Transfer transfer;
+    private final Shooter shooter;
 
     public final RobotVisualizer visualizer;
     private final AutoAlign align;
@@ -100,6 +105,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOReal());
                 spindexer = new Spindexer(new SpindexerIOReal());
                 transfer = new Transfer(new TransferIOReal());
+                shooter = new Shooter(new ShooterIOReal());
                 align = new AutoAlign(drive::getPose);
 
                 break;
@@ -130,6 +136,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIOSim());
                 spindexer = new Spindexer(new SpindexerIOSim());
                 transfer = new Transfer(new TransferIOSim());
+                shooter = new Shooter(new ShooterIOSim());
                 align = new AutoAlign(driveSimulation::getSimulatedDriveTrainPose);
 
                 break;
@@ -148,6 +155,7 @@ public class RobotContainer {
                 intake = new Intake(new IntakeIO() {});
                 spindexer = new Spindexer(new SpindexerIO() {});
                 transfer = new Transfer(new TransferIO() {});
+                shooter = new Shooter(new ShooterIO() {});
                 align = new AutoAlign(drive::getPose);
 
                 break;

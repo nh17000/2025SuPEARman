@@ -362,7 +362,7 @@ public final class Constants {
             }
         }
 
-        public static final TalonFXConfiguration getLRConfig() {
+        public static final TalonFXConfiguration getTransferConfig() {
             TalonFXConfiguration config = new TalonFXConfiguration();
 
             config.CurrentLimits.SupplyCurrentLimitEnable = true;
@@ -386,6 +386,45 @@ public final class Constants {
         public static final double TRANSFER_RADIUS = Units.inchesToMeters(3);
         public static final double TRANSFER_MOI = 0.002;
 
-        public static final DCMotor TRANSFER_MOTORS = DCMotor.getKrakenX60(2);
+        public static final DCMotor TRANSFER_MOTORS = DCMotor.getKrakenX60(2); // 2 x44's
+    }
+
+    public static final class ShooterConstants {
+        public enum ShooterState {
+            OFF(0),
+            FULL(12);
+
+            public final double volts;
+
+            private ShooterState(double volts) {
+                this.volts = volts;
+            }
+        }
+
+        public static final TalonFXConfiguration getShooterConfig() {
+            TalonFXConfiguration config = new TalonFXConfiguration();
+
+            config.CurrentLimits.SupplyCurrentLimitEnable = true;
+            config.CurrentLimits.SupplyCurrentLimit = 40;
+            config.CurrentLimits.StatorCurrentLimitEnable = true;
+            config.CurrentLimits.StatorCurrentLimit = 40;
+
+            config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+            config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+            return config;
+        }
+
+        public static final int SHOOTER_ONE_ID = 21;
+        public static final int SHOOTER_TWO_ID = 22;
+
+        public static final double SHOOTER_GEAR_RATIO = 18. / 36; // 0.5:1
+        public static final double SHOOTER_P_COEFFICIENT = 2 * Math.PI / SHOOTER_GEAR_RATIO;
+
+        public static final double SHOOTER_MASS = Units.lbsToKilograms(6);
+        public static final double SHOOTER_RADIUS = Units.inchesToMeters(4);
+        public static final double SHOOTER_MOI = 0.004;
+
+        public static final DCMotor SHOOTER_MOTORS = DCMotor.getKrakenX60(2);
     }
 }

@@ -9,8 +9,8 @@ public abstract class TransferIOTalonFX implements TransferIO {
     protected final PearadoxTalonFX rightMotor;
 
     protected TransferIOTalonFX() {
-        leftMotor = new PearadoxTalonFX(TransferConstants.LEFT_ID, TransferConstants.getLRConfig());
-        rightMotor = new PearadoxTalonFX(TransferConstants.RIGHT_ID, TransferConstants.getLRConfig());
+        leftMotor = new PearadoxTalonFX(TransferConstants.LEFT_ID, TransferConstants.getTransferConfig());
+        rightMotor = new PearadoxTalonFX(TransferConstants.RIGHT_ID, TransferConstants.getTransferConfig());
 
         rightMotor.setControl(new Follower(TransferConstants.LEFT_ID, true));
     }
