@@ -2,6 +2,7 @@ package frc.robot.subsystems.turret;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
 import java.util.function.Supplier;
@@ -12,15 +13,10 @@ public class Turret extends SubsystemBase {
     private TurretIO io;
     private final TurretIOInputsAutoLogged inputs = new TurretIOInputsAutoLogged();
 
-    private Supplier<Rotation2d> targetSupplier;
     private Supplier<ChassisSpeeds> speedsSupplier;
 
-    public Turret(
-            TurretIO io,
-            Supplier<Rotation2d> robotCentricAngleSupplier,
-            Supplier<ChassisSpeeds> chassisSpeedsSupplier) {
+    public Turret(TurretIO io, Supplier<ChassisSpeeds> chassisSpeedsSupplier) {
         this.io = io;
-        this.targetSupplier = robotCentricAngleSupplier;
         this.speedsSupplier = chassisSpeedsSupplier;
     }
 
@@ -28,14 +24,17 @@ public class Turret extends SubsystemBase {
     public void periodic() {
         io.updateInputs(inputs);
         Logger.processInputs("Turret", inputs);
+    }
 
-        double setpointRads = wrap(targetSupplier.get().getRadians());
+    public void followTarget(Supplier<Rotation2d> robotCentricAngleSupplier) {
+        double setpointRads = wrap(robotCentricAngleSupplier.get().getRadians());
         double setpointRots = setpointRads / TurretConstants.TURRET_P_COEFFICIENT;
 
         double ffVolts = getFF(setpointRads);
 
         io.runPosition(setpointRots, ffVolts);
 
+        Logger.recordOutput("Turret/Setpoint Degs", Units.radiansToDegrees(setpointRads));
         Logger.recordOutput("Turret/Setpoint Rots", setpointRots);
         Logger.recordOutput("Turret/FF Volts", ffVolts);
     }
@@ -45,9 +44,10 @@ public class Turret extends SubsystemBase {
         return inputs.turretData.position() * TurretConstants.TURRET_P_COEFFICIENT;
     }
 
-    public double wrap(double target) {
-        double current = getTurretAngleRads();
+    private double wrap(double target) {
+        target = Math.IEEEremainder(target, 2 * Math.PI);
 
+        double current = getTurretAngleRads();
         double[] candidates = new double[] {target - 2 * Math.PI, target, target + 2 * Math.PI};
 
         double best = target;
@@ -66,7 +66,7 @@ public class Turret extends SubsystemBase {
         return best;
     }
 
-    public double getFF(double setpointRads) {
+    private double getFF(double setpointRads) {
         double chassisAngularVelocity = speedsSupplier.get().omegaRadiansPerSecond;
 
         boolean shouldApplyFF = Math.abs(Rotation2d.fromRadians(setpointRads)

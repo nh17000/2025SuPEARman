@@ -17,7 +17,7 @@ public class SpeechBubbleOnField extends GamePieceOnFieldSimulation {
             Pounds.of(0.3), // ??
             1.8,
             5,
-            0.8);
+            0.8 * 0.25);
 
     public SpeechBubbleOnField(Translation2d initialPosition) {
         super(SPEECH_BUBBLE_INFO, new Pose2d(initialPosition, new Rotation2d()));

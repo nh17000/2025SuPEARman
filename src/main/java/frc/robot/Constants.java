@@ -18,6 +18,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -51,6 +52,7 @@ public final class Constants {
     public static final double LOOP_PERIOD = 0.02; // 20ms
     public static final double LOOP_FREQUENCY = 1.0 / LOOP_PERIOD; // 50Hz
     public static final double NOMINAL_VOLTAGE = 12;
+    public static final double g = 9.79285; // in Houston
 
     public static final class AlignConstants {
         public static final double BRANCH_SPACING = Units.inchesToMeters(12.97 / 2.0);
@@ -67,7 +69,7 @@ public final class Constants {
         public static final double MAX_DRIVE_VELOCITY = 3.0; // m/s
         public static final double MAX_DRIVE_ACCELERATION = 10; // m/s^2
 
-        public static final double ROT_kP = 5.0; // rad/s per rad error
+        public static final double ROT_kP = 5.0; // rads per rad error
         public static final double ROT_kI = 0.0;
         public static final double ROT_kD = 0.0;
         public static final double MAX_ROT_VELOCITY = 8; // rad/s
@@ -88,6 +90,9 @@ public final class Constants {
     public static final class FieldConstants {
         public static final double FIELD_LENGTH = Units.inchesToMeters(648);
         public static final double FIELD_WIDTH = Units.inchesToMeters(324);
+
+        public static final Pose2d CENTER =
+                new Pose2d(FIELD_LENGTH / 2.0, FieldConstants.FIELD_WIDTH / 2.0, Rotation2d.kZero);
 
         public static final int[] BLUE_REEF_TAG_IDS = {18, 19, 20, 21, 22, 17};
         public static final int[] BLUE_CORAL_STATION_TAG_IDS = {12, 13};
@@ -155,6 +160,9 @@ public final class Constants {
 
         public static final double TRANSLATIONAL_TOLERANCE = Units.inchesToMeters(16);
         public static final double DROP_COOLDOWN = 2.0;
+
+        public static final Pose3d GOAL1 = new Pose3d(0.4127, 7.196, 2.629, Rotation3d.kZero);
+        public static final Pose3d GOAL2 = new Pose3d(1.223, 7.882, 2.629, Rotation3d.kZero);
     }
 
     public static final class VisualizerConstants {
@@ -163,8 +171,11 @@ public final class Constants {
         public static final Translation3d M2_ZERO = new Translation3d(0.0, -0.009525, 0.0);
         public static final Translation3d M3_ZERO = new Translation3d(0.0, 0.136351, 0.193383);
         public static final Translation3d M4_ZERO = new Translation3d(0.0, 0.215676, 0.118053);
-        public static final Translation3d M5_ZERO = new Translation3d(0.0, 0.382877, 0.324873);
+        public static final Translation3d M5_ZERO = new Translation3d(0.0, 0.246637, 0.450096);
         public static final Translation3d M5_OFFSET = M5_ZERO.minus(M3_ZERO);
+        public static final Translation3d M6_ZERO =
+                new Translation3d(-0.095038, 0.160961, 0.560462); // why is y positive?
+        public static final Translation3d M6_OFFSET = M6_ZERO.minus(M0_ZERO);
     }
 
     public static final class TurretConstants {
@@ -226,15 +237,15 @@ public final class Constants {
 
     public static final class IntakeConstants {
         public enum IntakeState {
-            STOWED(80, 0),
-            DEPLOYED(45, 6),
-            EJECTING(55, -6);
+            STOWED(PIVOT_MAX_ANGLE, 0),
+            DEPLOYED(PIVOT_MIN_ANGLE, 6),
+            EJECTING(Units.degreesToRadians(45), -6);
 
             public final double pivotRads;
             public final double rollerVolts;
 
-            private IntakeState(double pivotDegrees, double rollerVolts) {
-                this.pivotRads = Units.degreesToRadians(pivotDegrees);
+            private IntakeState(double pivotRads, double rollerVolts) {
+                this.pivotRads = pivotRads;
                 this.rollerVolts = rollerVolts;
             }
         }
@@ -286,9 +297,9 @@ public final class Constants {
         public static final double ROLLER_GEAR_RATIO = (35. / 14.); // 2.5
         public static final double ROLLER_P_COEFFICIENT = 2 * Math.PI / ROLLER_GEAR_RATIO;
 
-        public static final double PIVOT_STARTING_ANGLE = Units.degreesToRadians(80);
-        public static final double PIVOT_MIN_ANGLE = Units.degreesToRadians(45);
-        public static final double PIVOT_MAX_ANGLE = Units.degreesToRadians(80);
+        public static final double PIVOT_STARTING_ANGLE = Units.degreesToRadians(66.75);
+        public static final double PIVOT_MIN_ANGLE = Units.degreesToRadians(28.07);
+        public static final double PIVOT_MAX_ANGLE = Units.degreesToRadians(66.75);
 
         public static final double PIVOT_MASS = Units.lbsToKilograms(7);
         public static final double PIVOT_LENGTH = Units.inchesToMeters(18);
@@ -352,8 +363,8 @@ public final class Constants {
     public static final class TransferConstants {
         public enum TransferState {
             OFF(0),
-            TRANSFERRING(6),
-            REVERSE(-3);
+            TRANSFERRING(4),
+            REVERSE(-2);
 
             public final double volts;
 
@@ -392,7 +403,7 @@ public final class Constants {
     public static final class ShooterConstants {
         public enum ShooterState {
             OFF(0),
-            FULL(12);
+            FULL(6);
 
             public final double volts;
 
@@ -426,5 +437,48 @@ public final class Constants {
         public static final double SHOOTER_MOI = 0.004;
 
         public static final DCMotor SHOOTER_MOTORS = DCMotor.getKrakenX60(2);
+
+        public static final double TANGENTIAL_VELOCITY_AT_12V = 100 * SHOOTER_P_COEFFICIENT * SHOOTER_RADIUS;
+        public static final double EJECT_HEIGHT = 0.635;
+    }
+
+    public static final class HoodConstants {
+        public static final TalonFXConfiguration getPivotConfig() {
+            TalonFXConfiguration config = new TalonFXConfiguration();
+
+            config.CurrentLimits.SupplyCurrentLimitEnable = true;
+            config.CurrentLimits.SupplyCurrentLimit = 20;
+            config.CurrentLimits.StatorCurrentLimitEnable = true;
+            config.CurrentLimits.StatorCurrentLimit = 20;
+
+            config.MotionMagic.MotionMagicCruiseVelocity = 20;
+            config.MotionMagic.MotionMagicAcceleration = 75;
+
+            config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+            config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+            config.Slot0.kG = 0.0;
+            config.Slot0.kS = 0.0;
+            config.Slot0.kV = 0.0;
+            config.Slot0.kA = 0.0;
+            config.Slot0.kP = 0.67;
+            config.Slot0.kI = 0.0;
+            config.Slot0.kD = 0.0;
+
+            return config;
+        }
+
+        public static final int HOOD_ID = 25;
+        public static final double HOOD_GEAR_RATIO = (186. / 10.) * (30. / 14.); // ~39.86
+        public static final double HOOD_P_COEFFICIENT = 2 * Math.PI / HOOD_GEAR_RATIO;
+
+        public static final double HOOD_STARTING_ANGLE = Units.degreesToRadians(30);
+        public static final double HOOD_MIN_ANGLE = Units.degreesToRadians(30);
+        public static final double HOOD_MAX_ANGLE = Units.degreesToRadians(75); // 64
+
+        public static final double HOOD_MASS = Units.lbsToKilograms(4);
+        public static final double HOOD_LENGTH = Units.inchesToMeters(8);
+
+        public static final DCMotor HOOD_MOTOR = DCMotor.getKrakenX60(1); // x44
     }
 }

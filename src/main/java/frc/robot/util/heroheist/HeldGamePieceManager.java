@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -34,6 +35,8 @@ public class HeldGamePieceManager {
     private DoubleSupplier spindexerPositionSupplier;
     private DoubleSupplier transferVelocitySupplier;
     private DoubleSupplier shooterVelocitySupplier;
+    private DoubleSupplier hoodAngleSupplier;
+    private DoubleSupplier turretAngleSupplier;
 
     private Supplier<Pose2d> poseSupplier;
     private Supplier<ChassisSpeeds> chassisSpeedsSupplier;
@@ -45,21 +48,25 @@ public class HeldGamePieceManager {
             DoubleSupplier spindexerPositionSupplier,
             DoubleSupplier transferVelocitySupplier,
             DoubleSupplier shooterVelocitySupplier,
+            DoubleSupplier hoodAngleSupplier,
+            DoubleSupplier turretAngleSupplier,
             AbstractDriveTrainSimulation driveSimulation) {
 
         this.intakeVelocitySupplier = intakeVelocitySupplier;
         this.spindexerPositionSupplier = spindexerPositionSupplier;
         this.transferVelocitySupplier = transferVelocitySupplier;
         this.shooterVelocitySupplier = shooterVelocitySupplier;
+        this.hoodAngleSupplier = hoodAngleSupplier;
+        this.turretAngleSupplier = turretAngleSupplier;
         this.poseSupplier = driveSimulation::getSimulatedDriveTrainPose;
         this.chassisSpeedsSupplier = driveSimulation::getDriveTrainSimulatedChassisSpeedsFieldRelative;
 
         bubbleIntakeSim = IntakeSimulation.OverTheBumperIntake(
-                "Speech Bubble", driveSimulation, Inches.of(28), Inches.of(6), IntakeSimulation.IntakeSide.LEFT, 6);
+                "Speech Bubble", driveSimulation, Inches.of(20), Inches.of(3), IntakeSimulation.IntakeSide.LEFT, 6);
     }
 
     public void periodic() {
-        if (intakeVelocitySupplier.getAsDouble() > 1) {
+        if (intakeVelocitySupplier.getAsDouble() > 0.1) {
             bubbleIntakeSim.startIntake();
         } else {
             bubbleIntakeSim.stopIntake();
@@ -92,15 +99,18 @@ public class HeldGamePieceManager {
     }
 
     private void launch(double shooterVel) {
-        Transform3d shooterTransform =
-                new Transform3d(new Translation3d(0.2, 0.2, 0.5), new Rotation3d(Math.PI / 8, 0, 0)); // placeholder
+        Transform3d shooterTransform = new Transform3d(
+                VisualizerConstants.M6_ZERO, new Rotation3d(0, Math.PI / 2 - hoodAngleSupplier.getAsDouble(), 0));
 
         SimulatedArena.getInstance()
                 .addGamePieceProjectile(new SpeechBubbleOnFly(
                         poseSupplier.get().getTranslation(),
                         shooterTransform.getTranslation().toTranslation2d(),
                         chassisSpeedsSupplier.get(),
-                        poseSupplier.get().getRotation(),
+                        poseSupplier
+                                .get()
+                                .getRotation()
+                                .plus(Rotation2d.fromRadians(-turretAngleSupplier.getAsDouble() + Math.PI)),
                         shooterTransform.getMeasureZ(),
                         MetersPerSecond.of(shooterVel),
                         shooterTransform.getRotation().getMeasureAngle()));
@@ -140,8 +150,8 @@ public class HeldGamePieceManager {
     private Transform3d getBubbleInSpindexerTransform(double spindexerYaw, int slot) {
         return getSpindexerTransform(spindexerYaw)
                 .plus(new Transform3d(
-                        new Translation3d(SpindexerConstants.BUBBLE_TO_SPINDEXER, 0, 0)
-                                .rotateBy(new Rotation3d(0, 0, spindexerYaw)),
+                        new Translation3d(SpindexerConstants.BUBBLE_TO_SPINDEXER, 0, 0.2)
+                                .rotateBy(new Rotation3d(0, 0, -spindexerYaw)),
                         Rotation3d.kZero));
     }
 
@@ -165,7 +175,9 @@ public class HeldGamePieceManager {
                         if (slot < 0) break;
                         spindexerSlots[slot] = this;
                         location = Location.SPINDEXER;
+                        break;
                     }
+                    transform = new Transform3d(0.5 - x * 0.5, 0, 0.2 * x, Rotation3d.kZero);
                     break;
                 }
                 case SPINDEXER -> {
@@ -187,7 +199,9 @@ public class HeldGamePieceManager {
                     x += transferVel * dt;
                     if (x > 3) {
                         location = Location.SHOOTER;
+                        break;
                     }
+                    transform = new Transform3d(-0.2, 0, 0.2 + (x - 2) * 0.2, Rotation3d.kZero);
                     break;
                 }
                 case SHOOTER -> {
@@ -195,6 +209,7 @@ public class HeldGamePieceManager {
                     if (x > 4) {
                         return true;
                     }
+                    transform = new Transform3d(-0.2, (x - 3) * 0.2, 0.4, Rotation3d.kZero);
                 }
             }
             return false;

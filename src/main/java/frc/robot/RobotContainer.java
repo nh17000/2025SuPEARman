@@ -25,13 +25,17 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.IntakeConstants.IntakeState;
 import frc.robot.Constants.TransferConstants.TransferState;
+import frc.robot.commands.AutoAim;
 import frc.robot.commands.AutoAlign;
 import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.*;
+import frc.robot.subsystems.hood.Hood;
+import frc.robot.subsystems.hood.HoodIO;
+import frc.robot.subsystems.hood.HoodIOReal;
+import frc.robot.subsystems.hood.HoodIOSim;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOReal;
@@ -74,10 +78,13 @@ public class RobotContainer {
     private final Spindexer spindexer;
     private final Transfer transfer;
     private final Shooter shooter;
+    private final Hood hood;
 
     public final RobotVisualizer visualizer;
-    private final AutoAlign align;
     private final HeldGamePieceManager manager;
+
+    private final AutoAlign align;
+    private final AutoAim aimAssist;
 
     private SwerveDriveSimulation driveSimulation = null;
 
@@ -104,12 +111,14 @@ public class RobotContainer {
                         drive,
                         new VisionIOLimelight(VisionConstants.camera0Name, drive::getRotation),
                         new VisionIOLimelight(VisionConstants.camera1Name, drive::getRotation));
-                turret = new Turret(new TurretIOReal(), this::getTurretTarget, drive::getChassisSpeeds);
+                turret = new Turret(new TurretIOReal(), drive::getChassisSpeeds);
                 intake = new Intake(new IntakeIOReal());
                 spindexer = new Spindexer(new SpindexerIOReal());
                 transfer = new Transfer(new TransferIOReal());
                 shooter = new Shooter(new ShooterIOReal());
+                hood = new Hood(new HoodIOReal());
                 align = new AutoAlign(drive::getPose);
+                aimAssist = new AutoAim(drive::getPose);
 
                 break;
             case SIM:
@@ -136,12 +145,14 @@ public class RobotContainer {
                         // new VisionIOPhotonVisionSim(
                         //         camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose)
                         );
-                turret = new Turret(new TurretIOSim(), this::getTurretTarget, drive::getChassisSpeeds);
+                turret = new Turret(new TurretIOSim(), drive::getChassisSpeeds);
                 intake = new Intake(new IntakeIOSim());
                 spindexer = new Spindexer(new SpindexerIOSim());
                 transfer = new Transfer(new TransferIOSim());
                 shooter = new Shooter(new ShooterIOSim());
+                hood = new Hood(new HoodIOSim());
                 align = new AutoAlign(driveSimulation::getSimulatedDriveTrainPose);
+                aimAssist = new AutoAim(driveSimulation::getSimulatedDriveTrainPose);
 
                 break;
 
@@ -155,12 +166,14 @@ public class RobotContainer {
                         new ModuleIO() {},
                         (pose) -> {});
                 vision = new Vision(drive, new VisionIO() {}, new VisionIO() {});
-                turret = new Turret(new TurretIO() {}, this::getTurretTarget, drive::getChassisSpeeds);
+                turret = new Turret(new TurretIO() {}, drive::getChassisSpeeds);
                 intake = new Intake(new IntakeIO() {});
                 spindexer = new Spindexer(new SpindexerIO() {});
                 transfer = new Transfer(new TransferIO() {});
                 shooter = new Shooter(new ShooterIO() {});
+                hood = new Hood(new HoodIO() {});
                 align = new AutoAlign(drive::getPose);
+                aimAssist = new AutoAim(drive::getPose);
 
                 break;
         }
@@ -182,13 +195,16 @@ public class RobotContainer {
                 turret::getTurretAngleRads,
                 transfer::getRoll,
                 spindexer::getAngleRads,
-                intake::getPivotAngleRadsToHorizontal);
+                intake::getPivotAngleRadsToHorizontal,
+                hood::getAngleRadsToHorizontal);
 
         manager = new HeldGamePieceManager(
                 intake::getRollerVelocity,
                 spindexer::getAngleRads,
                 transfer::getAngularVelocityRadPerSec,
                 shooter::getAngularVelocityRadPerSec,
+                hood::getAngleRadsToHorizontal,
+                turret::getTurretAngleRads,
                 driveSimulation);
 
         // Configure the button bindings
@@ -211,9 +227,6 @@ public class RobotContainer {
                 () -> -controller.getRightX(),
                 true));
 
-        // Controls can be found here
-        // https://docs.google.com/spreadsheets/d/1LB6nTpDfxbCZiFzkx_2DcHvuDDgMP4XP9NIPqSqYTP4/
-
         // --- Driver Controls ---
         controller.povLeft().whileTrue(align.reefAlignLeft(drive));
         controller.povDown().whileTrue(align.reefAlignMid(drive));
@@ -230,6 +243,7 @@ public class RobotContainer {
                 .onFalse(new InstantCommand(() -> transfer.setState(TransferState.OFF)));
 
         // --- Operator Controls ---
+        opController.a().whileFalse(aimAssist.aim(turret, hood));
         opController
                 .y()
                 .onTrue(new InstantCommand(() -> {
@@ -262,9 +276,8 @@ public class RobotContainer {
     public void resetSimulationField() {
         if (Constants.currentMode != Constants.Mode.SIM) return;
 
-        drive.setPose(new Pose2d(12, 2, new Rotation2d()));
+        drive.setPose(new Pose2d(3, 3, new Rotation2d()));
         SimulatedArena.getInstance().resetFieldForAuto();
-        // AlgaeHandler.getInstance().reset();
     }
 
     public void updateSimulation() {
@@ -284,15 +297,5 @@ public class RobotContainer {
             return alliance.get() == DriverStation.Alliance.Red;
         }
         return false;
-    }
-
-    public Rotation2d getTurretTarget() {
-        Pose2d target =
-                new Pose2d(FieldConstants.FIELD_LENGTH / 2.0, FieldConstants.FIELD_WIDTH / 2.0, Rotation2d.kZero);
-
-        return drive.getPose()
-                .getRotation()
-                .plus(Rotation2d.kCW_90deg)
-                .minus(drive.getPose().minus(target).getTranslation().getAngle());
     }
 }

@@ -24,6 +24,8 @@ import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import com.ctre.phoenix6.sim.CANcoderSimState;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
@@ -179,12 +181,38 @@ public final class PhoenixUtil {
                 .withSteerInertia(KilogramSquareMeters.of(0.05));
     }
 
-    // edit: do not use these; it seems like some specs are inconsistent, leading to weird behaviors in sim
-    // public static DCMotor getKrakenX44(int numMotors) {
-    //     return new DCMotor(12, 4.05, 275, 1.4, Units.rotationsPerMinuteToRadiansPerSecond(7530), numMotors);
-    // }
+    // this will be in wpilib 2026, see https://github.com/wpilibsuite/allwpilib/pull/8319/files
+    
+    /**
+     * Return a gearbox of Kraken X44 brushless motors.
+     *
+     * @param numMotors Number of motors in the gearbox.
+     * @return a gearbox of Kraken X44 motors.
+     */
+    public static DCMotor getKrakenX44(int numMotors) {
+        // From https://motors.ctr-electronics.com/dyno/dynometer-testing/
+        return new DCMotor(12, 4.11, 279, 2, Units.rotationsPerMinuteToRadiansPerSecond(7758), numMotors);
+    }
 
-    // public static DCMotor getMinion(int numMotors) {
-    //     return new DCMotor(12, 3.1, 200.46, 1.43, Units.rotationsPerMinuteToRadiansPerSecond(7200), numMotors);
-    // }
+    /**
+     * Return a gearbox of Kraken X44 brushless motors with FOC (Field-Oriented Control) enabled.
+     *
+     * @param numMotors Number of motors in the gearbox.
+     * @return A gearbox of Kraken X44 FOC enabled motors.
+     */
+    public static DCMotor getKrakenX44Foc(int numMotors) {
+        // From https://motors.ctr-electronics.com/dyno/dynometer-testing/
+        return new DCMotor(12, 5.01, 329, 2, Units.rotationsPerMinuteToRadiansPerSecond(7368), numMotors);
+    }
+
+    /**
+     * Return a gearbox of Minion brushless motors.
+     *
+     * @param numMotors Number of motors in the gearbox.
+     * @return A gearbox of Minion motors.
+     */
+    public static DCMotor getMinion(int numMotors) {
+        // From https://motors.ctr-electronics.com/dyno/dynometer-testing/
+        return new DCMotor(12, 3.17, 211, 2, Units.rotationsPerMinuteToRadiansPerSecond(7704), numMotors);
+    }
 }

@@ -1,0 +1,130 @@
+{
+  "hubs": [
+    {
+      "x": -8,
+      "y": -8,
+      "width": 1296,
+      "height": 736,
+      "state": {
+        "sidebar": {
+          "width": 250,
+          "expanded": [
+            "/AdvantageKit/RealOutputs",
+            "/AdvantageKit/RealOutputs/FieldSimulation",
+            "/AdvantageKit/RealOutputs/Vision",
+            "/AdvantageKit/RealOutputs/Vision/Camera0",
+            "/AdvantageKit/RealOutputs/AutoAlign/TranslationOutput",
+            "/AdvantageKit/EE",
+            "/AdvantageKit",
+            "/AdvantageKit/EndEffector",
+            "/AdvantageKit/Turret/TurretData",
+            "/AdvantageKit/RealOutputs/SwerveChassisSpeeds/Measured",
+            "/AdvantageKit/RealOutputs/Spindexer/RelativeYaw",
+            "/AdvantageKit/Transfer",
+            "/AdvantageKit/Shooter",
+            "/RealOutputs",
+            "/RealOutputs/LoggedRobot",
+            "/DriverStation",
+            "/RealOutputs/AutoAlign",
+            "/RealOutputs/DriveToPose",
+            "/AdvantageKit/Hood",
+            "/AdvantageKit/Hood/HoodData",
+            "/AdvantageKit/RealOutputs/Hood"
+          ]
+        },
+        "tabs": {
+          "selected": 1,
+          "tabs": [
+            {
+              "type": 0,
+              "title": "",
+              "controller": null,
+              "controllerUUID": "829h1tyw58kkzg7koull64mh81j8lky5",
+              "renderer": "#/",
+              "controlsHeight": 0
+            },
+            {
+              "type": 3,
+              "title": "Sim Field",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "robot",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/FieldSimulation/Pose",
+                    "logType": "Pose3d",
+                    "visible": true,
+                    "options": {
+                      "model": "Supearman"
+                    }
+                  },
+                  {
+                    "type": "component",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/FieldSimulation/Components2",
+                    "logType": "Transform3d[]",
+                    "visible": true,
+                    "options": {}
+                  },
+                  {
+                    "type": "cone",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/FieldSimulation/Speech Bubble",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "position": "center"
+                    }
+                  },
+                  {
+                    "type": "cone",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/FieldSimulation/Held Bubbles",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ffff",
+                      "position": "center"
+                    }
+                  }
+                ],
+                "game": "Hero Heist Field",
+                "origin": "red"
+              },
+              "controllerUUID": "ln1lwpda3q415hmlkbdfevdrl6bpgm7o",
+              "renderer": {
+                "cameraIndex": -1,
+                "orbitFov": 50,
+                "cameraPosition": [
+                  -1.7704082645201478,
+                  0.46909613974098546,
+                  0.22311665652974907
+                ],
+                "cameraTarget": [
+                  -4.269227570599946,
+                  0.8921938133838528,
+                  -0.22890915118603225
+                ]
+              },
+              "controlsHeight": 135
+            },
+            {
+              "type": 8,
+              "title": "Joysticks",
+              "controller": [
+                "Xbox Controller (White)",
+                "Xbox Controller (Blue)",
+                "None",
+                "None",
+                "None",
+                "None"
+              ],
+              "controllerUUID": "brh960mapv74faj42gcgdguofb4r06ni",
+              "renderer": null,
+              "controlsHeight": 85
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "satellites": [],
+  "version": "4.1.5"
+}
