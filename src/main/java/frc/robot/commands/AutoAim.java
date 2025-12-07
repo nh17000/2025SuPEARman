@@ -11,10 +11,29 @@ import frc.robot.Constants.HoodConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.hood.Hood;
 import frc.robot.subsystems.turret.Turret;
+import java.util.List;
 import java.util.function.Supplier;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.littletonrobotics.junction.AutoLogOutput;
 
 public class AutoAim {
-    private Pose2d targetPose = FieldConstants.GOAL2.toPose2d();
+    @RequiredArgsConstructor
+    public enum Goal {
+        UPTOWN(FieldConstants.UPTOWN_DISTRICTS, FieldConstants.UPTOWN_HEIGHT),
+        DOWNTOWN(FieldConstants.DOWNTOWN_DISTRICTS, FieldConstants.DOWNTOWN_HEIGHT),
+        LOW_FOOTHILL(FieldConstants.FOOTHILL_DISTRICTS, FieldConstants.LOW_FOOTHILL_HEIGHT),
+        HIGH_FOOTHILL(FieldConstants.FOOTHILL_DISTRICTS, FieldConstants.HIGH_FOOTHILL_HEIGHT);
+
+        public final List<Pose2d> locations;
+        public final double height;
+    }
+
+    @AutoLogOutput
+    @Getter
+    @Setter
+    private Goal currentGoal = Goal.UPTOWN;
 
     private Supplier<Pose2d> robotSupplier;
 
@@ -26,12 +45,16 @@ public class AutoAim {
         return new RunCommand(
                 () -> {
                     Pose2d robotPose = robotSupplier.get();
+                    Pose2d targetPose = findDistrictTargetPose(robotPose);
                     turret.followTarget(() -> getTurretTarget(robotPose, targetPose));
-                    hood.followTarget(() -> getHoodTargetAngle(
-                            robotPose, targetPose, FieldConstants.GOAL2.getZ() - ShooterConstants.EJECT_HEIGHT));
+                    hood.followTarget(() -> getHoodTargetAngle(robotPose, targetPose, currentGoal.height));
                 },
                 turret,
                 hood);
+    }
+
+    private Pose2d findDistrictTargetPose(Pose2d robotPose) {
+        return robotPose.nearest(currentGoal.locations);
     }
 
     private static Rotation2d getTurretTarget(Pose2d robotPose, Pose2d targetPose) {
@@ -40,14 +63,14 @@ public class AutoAim {
                 .minus(robotPose.minus(targetPose).getTranslation().getAngle());
     }
 
-    private static double getHoodTargetAngle(Pose2d robotPose, Pose2d targetPose, double h) {
+    private static double getHoodTargetAngle(Pose2d robotPose, Pose2d targetPose, double goalHeight) {
         double x = robotPose.minus(targetPose).getTranslation().getNorm();
-        // double launchAngle = Math.atan(Math.abs(h / x));
+        double h = goalHeight - ShooterConstants.EJECT_HEIGHT;
+        double v = ShooterConstants.TANGENTIAL_VELOCITY_AT_12V; // try using the actual shooter speed
 
-        double v = ShooterConstants.TANGENTIAL_VELOCITY_AT_12V;
         double discriminant = Math.pow(v, 4) - Constants.g * (Constants.g * Math.pow(x, 2) + 2 * h * Math.pow(v, 2));
         double tanTheta = (Math.pow(v, 2) - Math.sqrt(discriminant)) / (Constants.g * x);
-        double launchAngle = Math.atan(tanTheta);
+        double launchAngle = Math.atan(tanTheta); // ~= Math.atan(h / x) w/ gravity compensation
 
         return MathUtil.clamp(Math.PI / 2 - launchAngle, HoodConstants.HOOD_MIN_ANGLE, HoodConstants.HOOD_MAX_ANGLE);
     }

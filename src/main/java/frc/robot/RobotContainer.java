@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.IntakeConstants.IntakeState;
 import frc.robot.Constants.TransferConstants.TransferState;
 import frc.robot.commands.AutoAim;
+import frc.robot.commands.AutoAim.Goal;
 import frc.robot.commands.AutoAlign;
 import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
@@ -205,6 +206,7 @@ public class RobotContainer {
                 shooter::getAngularVelocityRadPerSec,
                 hood::getAngleRadsToHorizontal,
                 turret::getTurretAngleRads,
+                visualizer::getHoodTransform,
                 driveSimulation);
 
         // Configure the button bindings
@@ -226,6 +228,7 @@ public class RobotContainer {
                 () -> -controller.getLeftX(),
                 () -> -controller.getRightX(),
                 true));
+        turret.setDefaultCommand(aimAssist.aim(turret, hood));
 
         // --- Driver Controls ---
         controller.povLeft().whileTrue(align.reefAlignLeft(drive));
@@ -242,10 +245,8 @@ public class RobotContainer {
                 .onTrue(new InstantCommand(() -> transfer.setState(TransferState.TRANSFERRING)))
                 .onFalse(new InstantCommand(() -> transfer.setState(TransferState.OFF)));
 
-        // --- Operator Controls ---
-        opController.a().whileFalse(aimAssist.aim(turret, hood));
-        opController
-                .y()
+        controller
+                .b()
                 .onTrue(new InstantCommand(() -> {
                     intake.setState(IntakeState.EJECTING);
                     transfer.setState(TransferState.REVERSE);
@@ -262,6 +263,12 @@ public class RobotContainer {
                                 .getSimulatedDriveTrainPose()) // reset odometry to actual robot pose during simulation
                 : () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), new Rotation2d())); // zero gyro
         controller.start().onTrue(Commands.runOnce(resetGyro, drive).ignoringDisable(true));
+
+        // --- Operator Controls ---
+        opController.a().onTrue(new InstantCommand(() -> aimAssist.setCurrentGoal(Goal.UPTOWN)));
+        opController.x().onTrue(new InstantCommand(() -> aimAssist.setCurrentGoal(Goal.DOWNTOWN)));
+        opController.b().onTrue(new InstantCommand(() -> aimAssist.setCurrentGoal(Goal.LOW_FOOTHILL)));
+        opController.y().onTrue(new InstantCommand(() -> aimAssist.setCurrentGoal(Goal.HIGH_FOOTHILL)));
     }
 
     /**
@@ -276,7 +283,7 @@ public class RobotContainer {
     public void resetSimulationField() {
         if (Constants.currentMode != Constants.Mode.SIM) return;
 
-        drive.setPose(new Pose2d(3, 3, new Rotation2d()));
+        drive.setPose(new Pose2d(3.005, 2.881, Rotation2d.kCW_90deg));
         SimulatedArena.getInstance().resetFieldForAuto();
     }
 
@@ -287,8 +294,11 @@ public class RobotContainer {
         manager.periodic();
         Logger.recordOutput("FieldSimulation/Pose", new Pose3d(driveSimulation.getSimulatedDriveTrainPose()));
         Logger.recordOutput(
-                "FieldSimulation/Speech Bubble",
-                SimulatedArena.getInstance().getGamePiecesArrayByType("Speech Bubble"));
+                "FieldSimulation/Red Speech Bubbles",
+                SimulatedArena.getInstance().getGamePiecesArrayByType("Red Speech Bubble"));
+        Logger.recordOutput(
+                "FieldSimulation/Blue Speech Bubbles",
+                SimulatedArena.getInstance().getGamePiecesArrayByType("Blue Speech Bubble"));
     }
 
     public static boolean isRedAlliance() {

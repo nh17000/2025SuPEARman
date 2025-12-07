@@ -20,6 +20,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -52,7 +53,7 @@ public final class Constants {
     public static final double LOOP_PERIOD = 0.02; // 20ms
     public static final double LOOP_FREQUENCY = 1.0 / LOOP_PERIOD; // 50Hz
     public static final double NOMINAL_VOLTAGE = 12;
-    public static final double g = 11; // Maple Sim uses g=11, it's actually 9.79285 m/s^2 in Houston
+    public static final double g = 11; // 9.79285 m/s^2 in Houston
 
     public static final class AlignConstants {
         public static final double BRANCH_SPACING = Units.inchesToMeters(12.97 / 2.0);
@@ -94,6 +95,72 @@ public final class Constants {
         public static final Pose2d CENTER =
                 new Pose2d(FIELD_LENGTH / 2.0, FieldConstants.FIELD_WIDTH / 2.0, Rotation2d.kZero);
 
+        public static final double LOW_FOOTHILL_HEIGHT = Units.inchesToMeters(46.5);
+        public static final double HIGH_FOOTHILL_HEIGHT = Units.inchesToMeters(103.5);
+        public static final double UPTOWN_HEIGHT = Units.inchesToMeters(68.574);
+        public static final double DOWNTOWN_HEIGHT = Units.inchesToMeters(42 + 6); // shoot above opening
+
+        public static final Pose2d LEFT_UPTOWN_DISTRICT =
+                new Pose2d(Units.inchesToMeters(204), Units.inchesToMeters(325.882), Rotation2d.kZero);
+        public static final Pose2d LEFT_DOWNTOWN_DISTRICT =
+                new Pose2d(Units.inchesToMeters(204), Units.inchesToMeters(-1), Rotation2d.kZero);
+        public static final double DISTRICT_SEPARATION = Units.inchesToMeters(48);
+        public static final int NUM_DISTRICTS = 6; // 6 uptown and 6 downtown districts
+
+        public static final List<Pose2d> FOOTHILL_DISTRICTS = new ArrayList<>();
+        public static final List<Pose2d> UPTOWN_DISTRICTS = new ArrayList<>();
+        public static final List<Pose2d> DOWNTOWN_DISTRICTS = new ArrayList<>();
+
+        static {
+            // east foothills, red protected zone
+            FOOTHILL_DISTRICTS.add(new Pose2d(0.4127, 7.196, Rotation2d.kZero));
+            FOOTHILL_DISTRICTS.add(new Pose2d(1.223, 7.882, Rotation2d.kZero));
+
+            // west foothills, blue protected zone
+            FOOTHILL_DISTRICTS.add(new Pose2d(FIELD_LENGTH - 0.4127, 7.196, Rotation2d.kZero));
+            FOOTHILL_DISTRICTS.add(new Pose2d(FIELD_LENGTH - 1.223, 7.882, Rotation2d.kZero));
+
+            for (int i = 0; i < NUM_DISTRICTS; i++) {
+                UPTOWN_DISTRICTS.add(
+                        LEFT_UPTOWN_DISTRICT.plus(new Transform2d(i * DISTRICT_SEPARATION, 0, Rotation2d.kZero)));
+
+                DOWNTOWN_DISTRICTS.add(
+                        LEFT_DOWNTOWN_DISTRICT.plus(new Transform2d(i * DISTRICT_SEPARATION, 0, Rotation2d.kZero)));
+            }
+        }
+
+        public static final int BLUE_BUBBLE_ROWS = 5;
+        public static final int RED_BUBBLE_ROWS = 5;
+        public static final int BLUE_BUBBLE_COLS = 3;
+        public static final int RED_BUBBLE_COLS = 3;
+        public static final double BUBBLE_ROW_SEPARATION = Units.inchesToMeters(24);
+        public static final double BUBBLE_COL_SEPARATION = Units.inchesToMeters(48);
+        public static final Pose2d[] BLUE_BUBBLE_STARTING_POSITIONS = new Pose2d[BLUE_BUBBLE_ROWS * BLUE_BUBBLE_COLS];
+        public static final Pose2d[] RED_BUBBLE_STARTING_POSITIONS = new Pose2d[RED_BUBBLE_ROWS * BLUE_BUBBLE_COLS];
+        public static final Pose2d FIRST_BLUE_BUBBLE_STARTING_POSE =
+                new Pose2d(Units.inchesToMeters(204), Units.inchesToMeters(114), Rotation2d.kZero);
+        public static final Pose2d FIRST_RED_BUBBLE_STARTING_POSE =
+                new Pose2d(Units.inchesToMeters(444), Units.inchesToMeters(114), Rotation2d.kZero);
+
+        static {
+            int index = 0;
+            for (int row = 0; row < BLUE_BUBBLE_ROWS; row++) {
+                for (int col = 0; col < BLUE_BUBBLE_COLS; col++) {
+                    BLUE_BUBBLE_STARTING_POSITIONS[index++] =
+                            FIRST_BLUE_BUBBLE_STARTING_POSE.transformBy(new Transform2d(
+                                    col * BUBBLE_COL_SEPARATION, row * BUBBLE_ROW_SEPARATION, Rotation2d.kZero));
+                }
+            }
+            index = 0;
+            for (int row = 0; row < RED_BUBBLE_ROWS; row++) {
+                for (int col = 0; col < RED_BUBBLE_COLS; col++) {
+                    RED_BUBBLE_STARTING_POSITIONS[index++] = FIRST_RED_BUBBLE_STARTING_POSE.transformBy(new Transform2d(
+                            col * -BUBBLE_COL_SEPARATION, row * BUBBLE_ROW_SEPARATION, Rotation2d.kZero));
+                }
+            }
+        }
+
+        // reefscape constants, old
         public static final int[] BLUE_REEF_TAG_IDS = {18, 19, 20, 21, 22, 17};
         public static final int[] BLUE_CORAL_STATION_TAG_IDS = {12, 13};
         public static final int[] RED_REEF_TAG_IDS = {7, 6, 11, 10, 9, 8};
@@ -160,9 +227,6 @@ public final class Constants {
 
         public static final double TRANSLATIONAL_TOLERANCE = Units.inchesToMeters(16);
         public static final double DROP_COOLDOWN = 2.0;
-
-        public static final Pose3d GOAL1 = new Pose3d(0.4127, 7.196, 2.629, Rotation3d.kZero);
-        public static final Pose3d GOAL2 = new Pose3d(1.223, 7.882, 2.629, Rotation3d.kZero);
     }
 
     public static final class VisualizerConstants {
@@ -237,7 +301,7 @@ public final class Constants {
 
     public static final class IntakeConstants {
         public enum IntakeState {
-            STOWED(PIVOT_MAX_ANGLE, 0),
+            STOWED(Units.degreesToRadians(55), 0),
             DEPLOYED(PIVOT_MIN_ANGLE, 6),
             EJECTING(Units.degreesToRadians(45), -6);
 
@@ -316,7 +380,7 @@ public final class Constants {
     public static final class SpindexerConstants {
         public enum SpindexerState {
             SPAIN_WITHOUT_THE_SA(0), // ref, start the pin count! (off)
-            SPAIN_WITHOUT_THE_IN(1.5), // enjoy a relaxing retreat... (low speed)
+            SPAIN_WITHOUT_THE_IN(1), // enjoy a relaxing retreat... (low speed)
             ESPANA_SIN_EL_PAN(4), // ts (this spindexer) tiene mucha hambre (medium speed)
             SPAIN_WITHOUT_THE_A(12); // spin! (high speed)
 
@@ -354,17 +418,13 @@ public final class Constants {
         public static final double SPINDEXER_SHAFT_MOI = SPINDEXER_MOI * SPINDEXER_GEAR_RATIO * SPINDEXER_GEAR_RATIO;
 
         public static final DCMotor SPINDEXER_MOTOR = DCMotor.getKrakenX60(1);
-
-        // 5 speech bubbles in spindexer + 1 between transfer & turret
-        public static final int SPINDEXER_CAPACITY = 5;
-        public static final double SPINDEXER_ANGLE_INCREMENT = 2 * Math.PI / SPINDEXER_CAPACITY;
     }
 
     public static final class TransferConstants {
         public enum TransferState {
             OFF(0),
-            TRANSFERRING(4),
-            REVERSE(-2);
+            TRANSFERRING(1.7),
+            REVERSE(-3);
 
             public final double volts;
 
@@ -403,7 +463,7 @@ public final class Constants {
     public static final class ShooterConstants {
         public enum ShooterState {
             OFF(0),
-            FULL(12);
+            FULL(6);
 
             public final double volts;
 
@@ -441,10 +501,8 @@ public final class Constants {
         // 50% of tangential velocity is transferred to game piece
         public static final double EFFICIENCY = 0.5;
         public static final double TANGENTIAL_VELOCITY_AT_12V =
-                100 * SHOOTER_P_COEFFICIENT * SHOOTER_RADIUS * EFFICIENCY; // ~32 m/s
-        public static final double EJECT_HEIGHT = 0.635;
-
-        public static final Translation3d EJECT_POSITION = new Translation3d(-0.16, 0, 0.635);
+                50 * SHOOTER_P_COEFFICIENT * SHOOTER_RADIUS * EFFICIENCY; // ~32/2 m/s
+        public static final double EJECT_HEIGHT = 0.67; // 0.635
     }
 
     public static final class HoodConstants {

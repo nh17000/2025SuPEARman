@@ -8,8 +8,8 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import org.ironmaple.simulation.gamepieces.GamePieceProjectile;
 
-public class SpeechBubbleOnFly extends GamePieceProjectile {
-    public SpeechBubbleOnFly(
+public class BlueBubbleOnFly extends GamePieceProjectile {
+    public BlueBubbleOnFly(
             Translation2d robotPosition,
             Translation2d shooterPositionOnRobot,
             ChassisSpeeds chassisSpeeds,
@@ -18,7 +18,7 @@ public class SpeechBubbleOnFly extends GamePieceProjectile {
             LinearVelocity launchingSpeed,
             Angle shooterAngle) {
         super(
-                SpeechBubbleOnField.SPEECH_BUBBLE_INFO,
+                BlueBubbleOnField.BLUE_BUBBLE_INFO,
                 robotPosition,
                 shooterPositionOnRobot,
                 chassisSpeeds,

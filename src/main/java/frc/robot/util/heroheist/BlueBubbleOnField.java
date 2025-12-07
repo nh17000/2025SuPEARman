@@ -9,17 +9,17 @@ import edu.wpi.first.math.util.Units;
 import org.dyn4j.geometry.Circle;
 import org.ironmaple.simulation.gamepieces.GamePieceOnFieldSimulation;
 
-public class SpeechBubbleOnField extends GamePieceOnFieldSimulation {
-    public static final GamePieceInfo SPEECH_BUBBLE_INFO = new GamePieceInfo(
-            "Speech Bubble",
+public class BlueBubbleOnField extends GamePieceOnFieldSimulation {
+    public static final GamePieceInfo BLUE_BUBBLE_INFO = new GamePieceInfo(
+            "Blue Speech Bubble",
             new Circle(Units.inchesToMeters(3.5)), // .176 for algae
             Inches.of(7),
-            Pounds.of(0.3), // ??
+            Ounces.of(5),
             1.8,
             5,
             0.8 * 0.25);
 
-    public SpeechBubbleOnField(Translation2d initialPosition) {
-        super(SPEECH_BUBBLE_INFO, new Pose2d(initialPosition, new Rotation2d()));
+    public BlueBubbleOnField(Translation2d initialPosition) {
+        super(BLUE_BUBBLE_INFO, new Pose2d(initialPosition, new Rotation2d()));
     }
 }

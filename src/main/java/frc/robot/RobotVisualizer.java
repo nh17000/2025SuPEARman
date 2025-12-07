@@ -1,21 +1,26 @@
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.Constants.HoodConstants;
 import frc.robot.Constants.IntakeConstants;
 import frc.robot.Constants.VisualizerConstants;
 import java.util.function.DoubleSupplier;
-import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.littletonrobotics.junction.Logger;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class RobotVisualizer {
-    private DoubleSupplier turretYawSupplier;
-    private DoubleSupplier transferRollSupplier;
-    private DoubleSupplier spindexerYawSupplier;
-    private DoubleSupplier intakeRollSupplier;
-    private DoubleSupplier hoodPitchSupplier;
+    private final DoubleSupplier turretYawSupplier;
+    private final DoubleSupplier transferRollSupplier;
+    private final DoubleSupplier spindexerYawSupplier;
+    private final DoubleSupplier intakeRollSupplier;
+    private final DoubleSupplier hoodPitchSupplier;
+
+    @Getter
+    private Transform3d hoodTransform = Transform3d.kZero;
 
     public void periodic() {
         double turretYaw = turretYawSupplier.getAsDouble();
@@ -33,12 +38,14 @@ public class RobotVisualizer {
                 new Transform3d(VisualizerConstants.M4_ZERO, new Rotation3d(getIntakeS2Angle(intakeRoll), 0, 0));
         Transform3d intakeS3 = intakeS1.plus(
                 new Transform3d(VisualizerConstants.M5_OFFSET, new Rotation3d(getIntakeS3Angle(intakeRoll), 0, 0)));
-        Transform3d hood = turret.plus(new Transform3d(
+        hoodTransform = turret.plus(new Transform3d(
                 VisualizerConstants.M6_OFFSET, new Rotation3d(0, -hoodPitch + HoodConstants.HOOD_STARTING_ANGLE, 0)));
 
         Logger.recordOutput(
-                "FieldSimulation/Components2",
-                new Transform3d[] {turret, transfer, spindexer, intakeS1, intakeS2, intakeS3, hood});
+                "RobotVisualizer/Components",
+                new Transform3d[] {turret, transfer, spindexer, intakeS1, intakeS2, intakeS3, hoodTransform});
+
+        Logger.recordOutput("RobotVisualizer/Origin", Pose3d.kZero);
     }
 
     // https://www.desmos.com/calculator/yvnsugajwe
